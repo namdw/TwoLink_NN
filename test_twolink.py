@@ -22,7 +22,7 @@
 
 from TwoLink_sim import * # add this linke to use the simulator
 import time
-import numpy as np
+# import numpy as np
 import random
 import math
 import pickle
@@ -31,13 +31,19 @@ import base
 
 # Variables
 # tryNumber = range(1,1,100) # how many try
+TRAINING = True
 numTrain = 10
+if TRAINING:
+	epsilon = 0.0
+else:
+	epsilon = 0.25
+
 cntrl_freq = 100
+
 goal = [150,100]
 
 num_epoch = 3
 
-epsilon = 0.1
 actionList = []
 actionX = range(-2,3)
 actionY = range(-2,3)
@@ -47,14 +53,14 @@ for x in actionX:
 		actionList.append([x,y])
 valList = len(actionList)*[0]
 numState = 3
-filename1 = "test_net_xavier.p"
+filename1 = "test_net_vh.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(6,1,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
+	q_net = base.NN(4,1,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
 
 
 
@@ -65,10 +71,19 @@ def getAction(net, state):
 		valList[i] = value
 	# print(valList)
 	indices = [i for i, x in enumerate(valList) if x == max(valList)]
-	maxIndex = random.choice(indices)
+	min_action = math.inf
+	min_indices = []
+	for idx in indices:
+		if sum(actionList[idx]) <= min_action:
+			min_action = sum(actionList[idx])
+	for idx in indices:
+		if sum(actionList[idx]) == min_action:
+			min_indices += [idx]
+	maxIndex = random.choice(min_indices)
 	# print(valList)
 	# print(valList[maxIndex])
 	# time.sleep(1)
+	print(valList[maxIndex])
 	return actionList[maxIndex]
 
 
@@ -107,14 +122,15 @@ for numTry in range(numTrain):
 		# print('{0:.4f}'.format(reward/100.0), '{0:.4f}'.format(q_net.forward(state+state2+action)[0][0]))
 		# print('{0:.4f}'.format(reward/100.0 - q_net.forward(state+state2+action)[0][0]))
 		stateVal = sim.getStateVal()
-		for k in range(num_epoch):
-			q_net.train(state+state2+action, reward, 0.01)
+		if TRAINING:
+			for k in range(num_epoch):
+				q_net.train(state2+action, reward, 0.01)
 
 		# Command the first link to move delta_angle
 		state = sim.getState()
 		state = [st/180.0*math.pi for st in state]
 		state2 = [sim.getVert(), sim.getHorz()]
-		action = egreedyExplore(q_net, state+state2, epsilon)
+		action = egreedyExplore(q_net, state2, epsilon)
 		# print(state, action, q_net.forward(state+action), stateVal)
 
 		sim.move_link1(action[0]/cntrl_freq)

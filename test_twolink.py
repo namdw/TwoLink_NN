@@ -31,13 +31,13 @@ import base
 
 # Variables
 # tryNumber = range(1,1,100) # how many try
-numTrain = 5
+numTrain = 10
 cntrl_freq = 100
 goal = [150,100]
 
 num_epoch = 3
 
-# epsilon = 0.1
+epsilon = 0.1
 actionList = []
 actionX = range(-2,3)
 actionY = range(-2,3)
@@ -47,14 +47,14 @@ for x in actionX:
 		actionList.append([x,y])
 valList = len(actionList)*[0]
 numState = 3
-filename1 = "test_net_epoch3.p"
+filename1 = "test_net_xavier.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(6,1,[128,256,128], func='relu')
+	q_net = base.NN(6,1,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
 
 
 
@@ -102,19 +102,19 @@ for numTry in range(numTrain):
 	state2 = [sim.getVert(), sim.getHorz()]
 	action = [0,0]
 	stateVal = sim.getStateVal()
-	for i in range(500):
+	for i in range(200):
 		reward = sim.getStateVal()-stateVal
 		# print('{0:.4f}'.format(reward/100.0), '{0:.4f}'.format(q_net.forward(state+state2+action)[0][0]))
 		# print('{0:.4f}'.format(reward/100.0 - q_net.forward(state+state2+action)[0][0]))
 		stateVal = sim.getStateVal()
 		for k in range(num_epoch):
-			q_net.train(state+state2+action, reward/100.0, 0.01)
+			q_net.train(state+state2+action, reward, 0.01)
 
 		# Command the first link to move delta_angle
 		state = sim.getState()
 		state = [st/180.0*math.pi for st in state]
 		state2 = [sim.getVert(), sim.getHorz()]
-		action = egreedyExplore(q_net, state+state2, 0.01)
+		action = egreedyExplore(q_net, state+state2, epsilon)
 		# print(state, action, q_net.forward(state+action), stateVal)
 
 		sim.move_link1(action[0]/cntrl_freq)

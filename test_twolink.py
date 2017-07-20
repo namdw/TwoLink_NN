@@ -31,7 +31,7 @@ import base
 
 # Variables
 TRAINING = True
-numTrain = 500
+numTrain = 5
 cntrl_freq = 100
 
 goal = [150,100]
@@ -39,7 +39,7 @@ goal = [150,100]
 num_epoch = 3
 
 if(TRAINING):
-	epsilon = 0.4
+	epsilon = 0.2
 else:
 	epsilon = 0.0
 

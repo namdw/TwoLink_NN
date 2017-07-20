@@ -22,7 +22,7 @@
 
 from TwoLink_sim import * # add this linke to use the simulator
 import time
-import numpy as np
+# import numpy as np
 import random
 import math
 import pickle
@@ -34,6 +34,7 @@ import base
 TRAINING = True
 numTrain = 10
 cntrl_freq = 100
+
 goal = [150,100]
 
 num_epoch = 3
@@ -63,10 +64,19 @@ def getAction(net, state):
 		valList[i] = value
 	# print(valList)
 	indices = [i for i, x in enumerate(valList) if x == max(valList)]
-	maxIndex = random.choice(indices)
+	min_action = math.inf
+	min_indices = []
+	for idx in indices:
+		if sum(actionList[idx]) <= min_action:
+			min_action = sum(actionList[idx])
+	for idx in indices:
+		if sum(actionList[idx]) == min_action:
+			min_indices += [idx]
+	maxIndex = random.choice(min_indices)
 	# print(valList)
 	# print(valList[maxIndex])
 	# time.sleep(1)
+	print(valList[maxIndex])
 	return actionList[maxIndex]
 
 

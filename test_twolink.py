@@ -31,30 +31,28 @@ import base
 
 # Variables
 # tryNumber = range(1,1,100) # how many try
+TRAINING = True
 numTrain = 10
 cntrl_freq = 100
 goal = [150,100]
 
 num_epoch = 3
 
-epsilon = 0.1
-actionList = []
-actionX = range(-2,3)
-actionY = range(-2,3)
-actionList = []
-for x in actionX:
-	for y in actionY:
-		actionList.append([x,y])
-valList = len(actionList)*[0]
-numState = 3
-filename1 = "test_net_xavier.p"
+if(TRAINING):
+	epsilon = 0.5
+else:
+	epsilon = 0.0
+
+max_speed = 2
+
+filename1 = "test_net_parented_LR.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(6,1,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
+	q_net = base.NN(4,2,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
 
 
 
@@ -73,12 +71,16 @@ def getAction(net, state):
 
 
 def egreedyExplore(net, state, epsilon):
+	value = net.forward(state)
 	if random.random() < epsilon:
 		# print('random choice')
-		return random.choice(actionList)
+		action = (value+np.random.normal(0,max_speed/2.0,value.size))[0]
 
 	else:
-		return getAction(net, state)
+		action = value[0]
+	for i, a in enumerate(action):
+		action[i] = min(a,max_speed)
+	return action
 
 def mean(numbers):
     return float(sum(numbers)) / max(len(numbers), 1)
@@ -91,6 +93,8 @@ sim.show()
 
 time.sleep(1)
 
+max_reward = -10000
+LR = 0
 
 for numTry in range(numTrain):
 	print(numTry)
@@ -102,21 +106,27 @@ for numTry in range(numTrain):
 	state2 = [sim.getVert(), sim.getHorz()]
 	action = [0,0]
 	stateVal = sim.getStateVal()
-	for i in range(200):
-		reward = sim.getStateVal()-stateVal
-		# print('{0:.4f}'.format(reward/100.0), '{0:.4f}'.format(q_net.forward(state+state2+action)[0][0]))
-		# print('{0:.4f}'.format(reward/100.0 - q_net.forward(state+state2+action)[0][0]))
-		stateVal = sim.getStateVal()
-		for k in range(num_epoch):
-			q_net.train(state+state2+action, reward, 0.01)
+	for i in range(300):
+		# Trainig phase
+		if(TRAINING):
+			reward = sim.getStateVal()-stateVal
+			if(reward > 0):
+				if(reward>max_reward):
+					max_reward = reward
+				LR = max(0,0.1/(1+exp(-reward/max_reward)))
+			stateVal = sim.getStateVal()
+			if(reward < 0):
+				action = -action
+			for k in range(num_epoch):
+				q_net.train(state+state2, action, LR)
 
 		# Command the first link to move delta_angle
 		state = sim.getState()
 		state = [st/180.0*math.pi for st in state]
 		state2 = [sim.getVert(), sim.getHorz()]
 		action = egreedyExplore(q_net, state+state2, epsilon)
-		# print(state, action, q_net.forward(state+action), stateVal)
 
+		# Apply the actions
 		sim.move_link1(action[0]/cntrl_freq)
 		sim.move_link2(action[1]/cntrl_freq)
 		time.sleep(1/cntrl_freq)
@@ -124,11 +134,12 @@ for numTry in range(numTrain):
 
 print("done exploring")
 
-f = open(filename1,'wb')
-pickle.dump(q_net,f)
-f.close()
+if(TRAINING):
+	f = open(filename1,'wb')
+	pickle.dump(q_net,f)
+	f.close()
 
-print("done with pickle")
+	print("done with pickle")
 
 # if __name__ == '__main__':
 #     sys.exit(main())

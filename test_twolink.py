@@ -22,7 +22,7 @@
 
 from TwoLink_sim import * # add this linke to use the simulator
 import time
-# import numpy as np
+import numpy as np
 import random
 import math
 import pickle
@@ -30,9 +30,8 @@ import os.path
 import base 
 
 # Variables
-# tryNumber = range(1,1,100) # how many try
 TRAINING = True
-numTrain = 10
+numTrain = 500
 cntrl_freq = 100
 
 goal = [150,100]
@@ -40,7 +39,7 @@ goal = [150,100]
 num_epoch = 3
 
 if(TRAINING):
-	epsilon = 0.5
+	epsilon = 0.4
 else:
 	epsilon = 0.0
 
@@ -108,7 +107,7 @@ LR = 0
 
 for numTry in range(numTrain):
 	print(numTry)
-	sim.reset()
+	# sim.reset()
 	# sim.makeGoal(goal)
 	sim.randGoal()
 	state = sim.getState()
@@ -130,7 +129,7 @@ for numTry in range(numTrain):
 			for k in range(num_epoch):
 				q_net.train(state+state2, action, LR)
 
-		# Command the first link to move delta_angle
+		# Update
 		state = sim.getState()
 		state = [st/180.0*math.pi for st in state]
 		state2 = [sim.getVert(), sim.getHorz()]

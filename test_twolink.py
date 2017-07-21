@@ -31,7 +31,7 @@ import base
 
 # Variables
 TRAINING = True
-numTrain = 5
+numTrain = 10
 cntrl_freq = 100
 
 goal = [150,100]
@@ -39,7 +39,7 @@ goal = [150,100]
 num_epoch = 3
 
 if(TRAINING):
-	epsilon = 0.2
+	epsilon = 0.5
 else:
 	epsilon = 0.0
 
@@ -123,9 +123,12 @@ for numTry in range(numTrain):
 				if(reward>max_reward):
 					max_reward = reward
 				LR = max(0,0.1/(1+exp(-reward/max_reward)))
+				# LR = max(0,0.1*reward/max_reward)
+			else:
+				for i in range(len(action)):
+					action[i] = -1*action[i]
+				LR = 10e-4
 			stateVal = sim.getStateVal()
-			if(reward < 0):
-				action = -action
 			for k in range(num_epoch):
 				q_net.train(state+state2, action, LR)
 

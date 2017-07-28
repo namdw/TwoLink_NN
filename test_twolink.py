@@ -31,7 +31,7 @@ import base
 
 # Variables
 TRAINING = True
-numTrain = 10
+numTrain = 2
 cntrl_freq = 100
 
 goal = [150,100]
@@ -39,7 +39,7 @@ goal = [150,100]
 num_epoch = 3
 
 if(TRAINING):
-	epsilon = 0.5
+	epsilon = 0.7
 else:
 	epsilon = 0.0
 
@@ -55,7 +55,7 @@ else:
 	q_net = base.NN(4,2,[128,256,128], func='lrelu', dropout=0.8, weight='xavier')
 
 
-
+print(q_net.W)
 # Function
 def getAction(net, state):
 	for i in range(len(actionList)):
@@ -115,22 +115,25 @@ for numTry in range(numTrain):
 	state2 = [sim.getVert(), sim.getHorz()]
 	action = [0,0]
 	stateVal = sim.getStateVal()
-	for i in range(300):
+	# for i in range(300):
+	while(abs(stateVal)>5):
 		# Trainig phase
 		if(TRAINING):
 			reward = sim.getStateVal()-stateVal
 			if(reward > 0):
 				if(reward>max_reward):
 					max_reward = reward
-				LR = max(0,0.1/(1+exp(-reward/max_reward)))
+				LR = max(0,0.0001/(1+exp(-reward/max_reward))+0.0001)
 				# LR = max(0,0.1*reward/max_reward)
 			else:
 				for i in range(len(action)):
 					action[i] = -1*action[i]
-				LR = 10e-4
+				LR = 0.0001
 			stateVal = sim.getStateVal()
 			for k in range(num_epoch):
 				q_net.train(state+state2, action, LR)
+		else:
+			print(action)
 
 		# Update
 		state = sim.getState()

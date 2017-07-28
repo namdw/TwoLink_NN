@@ -153,8 +153,12 @@ class TwoLink(object):
 
 	def randGoal(self):
 		global goal_point
-		x = random.random()*150
-		y = random.random()*300-150
+		# x = random.random()*150
+		# y = random.random()*300-150
+		rand_angle = random.random()*2*3.14159
+		rand_len = random.random()*(link1_len+link2_len-10)
+		x = rand_len*cos(rand_angle)
+		y = rand_len*sin(rand_angle)
 		delta_x = x - self.goal[0]
 		delta_y = self.goal[1] - y
 		w.move(goal_point, delta_x, delta_y)

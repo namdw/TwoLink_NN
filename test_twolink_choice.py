@@ -31,7 +31,7 @@ import base
 
 # Variables
 TRAINING = True
-numTrain = 100
+numTrain = 10
 RUNTIME = 500
 cntrl_freq = 100
 
@@ -59,12 +59,12 @@ sim.show()
 
 time.sleep(1)
 
+state_list = []
+action_list = []
 for numTry in range(numTrain):
 	# print("Trial #",numTry)
 	# sim.reset()
 	counter = 0
-	state_list = []
-	action_list = []
 
 	sim.randGoal()
 	# sim.makeGoal(goal)
@@ -137,15 +137,14 @@ for numTry in range(numTrain):
 		else:
 			print(action)
 
-	if(len(state_list)!=0):
-		rand_order = np.random.permutation(len(state_list))
-		for idx in rand_order:
-			for _ in range(num_epoch):
-				q_net.train(state_list[idx], action_list[idx], LR)
-
 	if(counter!=0):
 		print("Trial #",numTry," Score:",-init_dist/counter)
 
+if(len(state_list)!=0):
+	rand_order = np.random.permutation(len(state_list))
+	for idx in rand_order:
+		for _ in range(num_epoch):
+			q_net.train(state_list[idx], action_list[idx], LR)
 
 print("done exploring")
 

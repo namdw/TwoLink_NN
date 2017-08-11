@@ -31,28 +31,29 @@ import base
 
 # Variables
 TRAINING = True
-numTrain = 5
+numTrain = 100
+RUNTIME = 100
 cntrl_freq = 100
 
-goal = [150,100]
+goal = [100,150]
 
 num_epoch = 3
 
 if(TRAINING):
-	epsilon = 0.3
+	epsilon = 0.5
 else:
 	epsilon = 0.0
 
 max_speed = 2
 
-filename1 = "test_net_2states.p"
+filename1 = "test_net_var.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(4,2,[64,128,64], func='lrelu', dropout=0.8, weight='xavier')
+	q_net = base.NN(2,2,[64,128,256,128,64], func='lrelu', dropout=0.8, weight='xavier')
 
 
 # Function
@@ -83,8 +84,8 @@ def egreedyExplore(net, state, epsilon):
 	rand = 0
 	if random.random() < epsilon:
 		# print('random choice')
-		action = (value+np.random.normal(0,max_speed/2.0,value.size))[0]
-		# action = (2*max_speed*np.random.random(value.size))-max_speed
+		# action = (value+np.random.normal(0,max_speed/2.0,value.size))[0]
+		action = (2*max_speed*np.random.random(value.size))-max_speed
 		rand = 1
 	else:
 		action = value[0]
@@ -111,8 +112,8 @@ for numTry in range(numTrain):
 	# print("Trial #",numTry)
 	sim.reset()
 	counter = 0
-	# sim.randGoal()
-	sim.makeGoal(goal)
+	sim.randGoal()
+	# sim.makeGoal(goal)
 	state = sim.getState()
 	state = [st/180.0*math.pi for st in state]
 	state2 = [sim.getVert(), sim.getHorz()]
@@ -122,7 +123,7 @@ for numTry in range(numTrain):
 	state_list = []
 	action_list = []
 	rand = 0
-	while(abs(stateVal)>5 and counter<300):
+	while(abs(stateVal)>5 and counter<RUNTIME):
 		counter = counter + 1
 		# Trainig phase
 		if(TRAINING):
@@ -130,15 +131,16 @@ for numTry in range(numTrain):
 			if(reward > 0 and rand):
 				if(reward>max_reward):
 					max_reward = reward
-				LR = max(0,0.002/(1+exp(-reward/max_reward))+0.001)
+				for _ in range(num_epoch):
+					LR = max(0,0.004/(1+exp(-reward/max_reward))+0.001)
 				# LR = max(0,0.1*reward/max_reward)
 			elif(reward <= 0 and not rand):
 				for i in range(len(action)):
 					action[i] = 0.0 # rather do nothing
-				LR = 0.001
+				LR = 0.0
 			# for k in range(num_epoch):
-			q_net.train(state+state2, action, LR)
-			state_list.append(state+state2)
+			q_net.train(state2, action, LR)
+			state_list.append(state2)
 			action_list.append(action)
 		elif(not TRAINING):
 			print(action)
@@ -148,7 +150,7 @@ for numTry in range(numTrain):
 		state = sim.getState()
 		state = [st/180.0*math.pi for st in state]
 		state2 = [sim.getVert(), sim.getHorz()]
-		action, rand = egreedyExplore(q_net, state+state2, epsilon)
+		action, rand = egreedyExplore(q_net, state2, epsilon)
 
 		# Apply the actions
 		sim.move_link1(action[0]/cntrl_freq)
@@ -162,7 +164,7 @@ for numTry in range(numTrain):
 				q_net.train(state_list[i], action_list[i], 0.001)
 	else:
 		epsilon = min(0.3,epsilon*1.1)
-	print("Trial #",numTry," Score:",300-counter)
+	print("Trial #",numTry," Score:",RUNTIME-counter)
 
 
 print("done exploring")

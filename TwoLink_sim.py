@@ -116,7 +116,7 @@ class TwoLink(object):
 		return [self.angle1, self.angle2]
 		
 	def getState(self):
-		angleState1 = (self.angle1*degperpi - atan2(self.goal[1],self.goal[0])*degperpi) 
+		angleState1 = ((self.angle1 - atan2(self.goal[1],self.goal[0])) *degperpi) % 180
 		angleState2 = (self.angle2*degperpi)
 		# posStatex = gripper_pos[0]//posStateDivider
 		# posStatey = gripper_pos[1]//posStateDivider
@@ -133,7 +133,7 @@ class TwoLink(object):
 	def getHorz(self):
 		# return sign(self.angle1 - atan2(self.goal[1],self.goal[0]))
 		endpoints = self.getEndpoint()
-		return atan2(endpoints[1],endpoints[0]) - atan2(self.goal[1],self.goal[0])
+		return (atan2(endpoints[1],endpoints[0]) - atan2(self.goal[1],self.goal[0])) % 3.1415
 
 	def getStateVal(self):
 		endPosx = link1_len*cos(self.angle1) + link2_len*cos(self.angle2+self.angle1)
@@ -155,7 +155,7 @@ class TwoLink(object):
 		global goal_point
 		# x = random.random()*150
 		# y = random.random()*300-150
-		rand_angle = random.random()*2*3.14159
+		rand_angle = random.random()*3.14159-3.14159/2
 		rand_len = random.random()*(link1_len+link2_len-10)
 		x = rand_len*cos(rand_angle)
 		y = rand_len*sin(rand_angle)

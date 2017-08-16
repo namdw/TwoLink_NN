@@ -30,8 +30,8 @@ import os.path
 import base 
 
 # Variables
-TRAINING = True
-numTrain = 10
+TRAINING = False
+numTrain = 1
 RUNTIME = 500
 cntrl_freq = 100
 
@@ -41,16 +41,16 @@ num_epoch = 3
 
 max_speed = 2
 
-filename1 = "test_net_var.p"
+filename1 = "test_net2.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(3,2,[64,128,256,128,64], func='lrelu', dropout=0.8, weight='xavier')
+	q_net = base.NN(2,2,[64,128,64], func='lrelu', dropout=0.8, weight='xavier')
 
-
+# print(q_net.W)
 # Create the simulator object
 sim = TwoLink()
 
@@ -72,12 +72,18 @@ for numTry in range(numTrain):
 	# state = [st/180.0*math.pi for st in state]
 	state = [state[0]]
 	state2 = [sim.getVert(), sim.getHorz()]
-	state = state+state2
+	state = state2
 	action = [0,0]
 	stateVal = sim.getStateVal()
 	init_dist = sim.getStateVal()
 
-	while(abs(stateVal)>5):
+	stay_count = 0
+	goal_flag = 0
+	while(not(goal_flag==1 and stay_count>100)):
+		if(abs(stateVal)<5):
+			goal_flag = 1
+		if(goal_flag==1):
+			stay_count+=1
 
 		# Update to currenrt state
 		stateVal = sim.getStateVal()
@@ -85,7 +91,7 @@ for numTry in range(numTrain):
 		# state = [st/180.0*math.pi for st in state]
 		state = [state[0]]
 		state2 = [sim.getVert(), sim.getHorz()]
-		state = state+state2
+		state = state2
 
 		# Current action
 		action = q_net.forward(state)[0]
@@ -98,7 +104,7 @@ for numTry in range(numTrain):
 		
 		# Trainig phase
 		if(TRAINING):
-			LR = 0.001
+			LR = 0.002
 			# reward of current action
 			reward = sim.getStateVal()-stateVal
 			# Move back

@@ -31,7 +31,7 @@ import base
 
 # Variables
 TRAINING = False
-numTrain = 100
+numTrain = 10
 RUNTIME = 500
 cntrl_freq = 100
 
@@ -41,14 +41,24 @@ num_epoch = 5
 
 max_speed = 2
 
-filename1 = "test_net_small.p"
+filename1 = "test_net_build.p"
 
 if os.path.isfile(filename1):
 	f = open(filename1,'rb')
 	q_net = pickle.load(f)
 	f.close()
 else:
-	q_net = base.NN(3,2,[16,32,16], func='lrelu', dropout=0.8, weight='xavier')
+	input_layer = base.Layer('input',3)
+	hidden_layer1 = base.Layer('hidden',128,func='lrelu',dropout=0.8,weight_scale=5.0,optimizer='ADAM')
+	hidden_layer2 = base.Layer('hidden',256,func='lrelu',dropout=0.8,weight_scale=5.0,optimizer='ADAM')
+	hidden_layer3 = base.Layer('hidden',128,func='lrelu',dropout=0.8,weight_scale=5.0,optimizer='ADAM')
+	output_layer = base.Layer('output',2,dropout=0.8,weight_scale=10.0,optimizer='ADAM')
+	q_net = base.NNb()
+	q_net.addLayer(input_layer)
+	q_net.addLayer(hidden_layer1)
+	q_net.addLayer(hidden_layer2)
+	q_net.addLayer(hidden_layer3)
+	q_net.addLayer(output_layer)
 
 # print(q_net.W)
 # Create the simulator object
@@ -58,6 +68,8 @@ sim = TwoLink()
 sim.show()
 
 time.sleep(1)
+
+LR = 0.01
 
 state_list = []
 action_list = []
@@ -104,7 +116,6 @@ for numTry in range(numTrain):
 		
 		# Trainig phase
 		if(TRAINING):
-			LR = 0.01
 			# reward of current action
 			reward = sim.getStateVal()-stateVal
 			# Move back
